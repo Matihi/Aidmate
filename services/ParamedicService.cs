@@ -1,31 +1,49 @@
 using AidMate.Models;
+using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
+using MongoDB.Bson;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
+namespace AidMate.Services;
 public class ParamedicService : IParamedicService
 {
-    private readonly List<ParamedicModel> _store = new();
+    private readonly IMongoCollection<ParamedicModel> _paramedicCollection;
 
-    public async Task<List<ParamedicModel>> Get() => await Task.FromResult(_store);
+    public ParamedicService(IConfiguration config)
+    {
+        var client = new MongoClient(config["MongoDbSettings:ConnectionString"]);
+        var database = client.GetDatabase(config["MongoDbSettings:DatabaseName"]);
+        _paramedicCollection = database.GetCollection<ParamedicModel>(config["MongoDbSettings:Collections:Paramedics"]);
+    }
 
-    public async Task<ParamedicModel?> GetById(string id)
-        => await Task.FromResult(_store.FirstOrDefault(p => p.Id == id));
+    public async Task<List<ParamedicModel>> Get(string? name, string? qualification)
+    {
+        var filterBuilder = Builders<ParamedicModel>.Filter;
+        var filters = new List<FilterDefinition<ParamedicModel>>();
 
-    public async Task<List<ParamedicModel>> Add(ParamedicModel newParamedic)
+        if (!string.IsNullOrEmpty(name))
+            filters.Add(filterBuilder.Regex(p => p.Name, new BsonRegularExpression(name, "i")));
+
+        if (!string.IsNullOrEmpty(qualification))
+            filters.Add(filterBuilder.Eq(p => p.Qualification, qualification));
+
+        var filter = filters.Count > 0 ? filterBuilder.And(filters) : filterBuilder.Empty;
+        return await _paramedicCollection.Find(filter).ToListAsync();
+    }
+
+    public async Task<ParamedicModel?> GetById(string id) =>
+        await _paramedicCollection.Find(p => p.Id == id).FirstOrDefaultAsync();
+
+    public async Task Add(ParamedicModel newParamedic)
     {
         newParamedic.Id = Guid.NewGuid().ToString();
-        _store.Add(newParamedic);
-        return await Task.FromResult(_store);
+        await _paramedicCollection.InsertOneAsync(newParamedic);
     }
 
-    public async Task<List<ParamedicModel>> Update(string id, ParamedicModel updatedParamedic)
-    {
-        var idx = _store.FindIndex(p => p.Id == id);
-        if (idx != -1) _store[idx] = updatedParamedic;
-        return await Task.FromResult(_store);
-    }
+    public async Task Update(string id, ParamedicModel updatedParamedic) =>
+        await _paramedicCollection.ReplaceOneAsync(p => p.Id == id, updatedParamedic);
 
-    public async Task<List<ParamedicModel>> Delete(string id)
-    {
-        _store.RemoveAll(p => p.Id == id);
-        return await Task.FromResult(_store);
-    }
+    public async Task Delete(string id) =>
+        await _paramedicCollection.DeleteOneAsync(p => p.Id == id);
 }

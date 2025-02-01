@@ -1022,19 +1022,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\user\\.nuget\\packages\\": {}
+    "C:\\Users\\Mesfin\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\user\\AidMate-CS\\aidmate\\aidmate.csproj",
+      "projectUniqueName": "C:\\Users\\Mesfin\\Desktop\\My subjects\\4th year first semester\\EventDrivenAssignment\\Aidmate\\aidmate.csproj",
       "projectName": "aidmate",
-      "projectPath": "C:\\Users\\user\\AidMate-CS\\aidmate\\aidmate.csproj",
-      "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\user\\AidMate-CS\\aidmate\\obj\\",
+      "projectPath": "C:\\Users\\Mesfin\\Desktop\\My subjects\\4th year first semester\\EventDrivenAssignment\\Aidmate\\aidmate.csproj",
+      "packagesPath": "C:\\Users\\Mesfin\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Mesfin\\Desktop\\My subjects\\4th year first semester\\EventDrivenAssignment\\Aidmate\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Mesfin\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net6.0"

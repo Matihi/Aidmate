@@ -1,31 +1,49 @@
 using AidMate.Models;
+using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
+
+namespace AidMate.Services;
 public class AmbulanceService : IAmbulanceService
 {
-    private readonly List<AmbulanceModel> _store = new();
+    private readonly IMongoCollection<AmbulanceModel> _ambulanceCollection;
 
-    public async Task<List<AmbulanceModel>> Get() => await Task.FromResult(_store);
+    public AmbulanceService(IConfiguration config)
+    {
+        var client = new MongoClient(config["MongoDbSettings:ConnectionString"]);
+        var database = client.GetDatabase(config["MongoDbSettings:DatabaseName"]);
+        _ambulanceCollection = database.GetCollection<AmbulanceModel>(config["MongoDbSettings:Collections:Ambulances"]);
+    }
 
-    public async Task<AmbulanceModel?> GetById(string id)
-        => await Task.FromResult(_store.FirstOrDefault(a => a.Id == id));
+    public async Task<List<AmbulanceModel>> Get(string? type, bool? isAvailable)
+    {
+        var filterBuilder = Builders<AmbulanceModel>.Filter;
+        var filters = new List<FilterDefinition<AmbulanceModel>>();
 
-    public async Task<List<AmbulanceModel>> Add(AmbulanceModel newAmbulance)
+        if (!string.IsNullOrEmpty(type))
+            filters.Add(filterBuilder.Eq(a => a.Type, type));
+
+        if (isAvailable.HasValue)
+            filters.Add(filterBuilder.Eq(a => a.IsAvailable, isAvailable.Value));
+
+        var filter = filters.Count > 0 ? filterBuilder.And(filters) : filterBuilder.Empty;
+        return await _ambulanceCollection.Find(filter).ToListAsync();
+    }
+
+    public async Task<AmbulanceModel?> GetById(string id) =>
+        await _ambulanceCollection.Find(a => a.Id == id).FirstOrDefaultAsync();
+
+    public async Task Add(AmbulanceModel newAmbulance)
     {
         newAmbulance.Id = Guid.NewGuid().ToString();
-        _store.Add(newAmbulance);
-        return await Task.FromResult(_store);
+        await _ambulanceCollection.InsertOneAsync(newAmbulance);
     }
 
-    public async Task<List<AmbulanceModel>> Update(string id, AmbulanceModel updatedAmbulance)
-    {
-        var idx = _store.FindIndex(a => a.Id == id);
-        if (idx != -1) _store[idx] = updatedAmbulance;
-        return await Task.FromResult(_store);
-    }
+    public async Task Update(string id, AmbulanceModel updatedAmbulance) =>
+        await _ambulanceCollection.ReplaceOneAsync(a => a.Id == id, updatedAmbulance);
 
-    public async Task<List<AmbulanceModel>> Delete(string id)
-    {
-        _store.RemoveAll(a => a.Id == id);
-        return await Task.FromResult(_store);
-    }
+    public async Task Delete(string id) =>
+        await _ambulanceCollection.DeleteOneAsync(a => a.Id == id);
 }
